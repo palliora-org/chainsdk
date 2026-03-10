@@ -1,5 +1,6 @@
 import assert from "assert";
 import { getApi, signAndSend } from "../chain";
+import { debugLog } from "../utils";
 
 export async function joinGuardian(account: any, prefs: any) {
   const api = await getApi();
@@ -27,7 +28,7 @@ export async function joinGuardian(account: any, prefs: any) {
     },
   };
 
-  console.log(
+  debugLog(
     account.address,
     "joining as guardian with preferences:",
     guardianPrefs
@@ -36,5 +37,5 @@ export async function joinGuardian(account: any, prefs: any) {
   const guardTx = api.tx.staking.guard(guardianPrefs);
   const hash = await signAndSend(guardTx, account);
 
-  console.log("Guardian join tx sent with hash:", hash.hash);
+  debugLog("Guardian join tx sent with hash:", hash.hash);
 }

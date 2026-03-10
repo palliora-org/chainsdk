@@ -1,5 +1,6 @@
 import assert from "assert";
 import { getApi, signAndSend } from "../chain";
+import { debugLog } from "../utils";
 
 export async function newStake(
   account: any,
@@ -11,12 +12,12 @@ export async function newStake(
   assert(api, "API not initialized");
   assert(account, "Account not initialized");
 
-  console.log(
+  debugLog(
     `Staking amount: ${amount} for account: ${account.address} with reward destination: ${rewardDestination}`
   );
 
   const stakeTx = api.tx.staking.bond(amount, rewardDestination);
   const hash = await signAndSend(stakeTx, account);
 
-  console.log(`Stake transaction sent with hash: ${hash.hash}`);
+  debugLog(`Stake transaction sent with hash: ${hash.hash}`);
 }

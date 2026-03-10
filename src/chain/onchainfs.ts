@@ -2,7 +2,7 @@
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { testCrypt } from "../crypto/core";
 import { encrypt, gen_stretched_key } from "../crypto/cipher";
-import { hexToUint8Array, uint8ArrayToBase64 } from "../utils/helper";
+import { hexToUint8Array, uint8ArrayToBase64 } from "../utils";
 import type { Hex } from "viem";
 import { signAndSend } from "./utils";
 

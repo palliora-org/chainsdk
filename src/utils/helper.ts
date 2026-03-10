@@ -122,3 +122,17 @@ export const decodeField = (
   }
   return bytes;
 };
+
+/**
+ * Conditional debug logging utility.
+ * Only logs when DEBUG flag is enabled in config.
+ * 
+ * @param message - The message to log
+ * @param optionalParams - Additional parameters to log
+ */
+export const debugLog = (message?: any, ...optionalParams: any[]) => {
+  const { DEBUG } = require("../config");
+  if (DEBUG) {
+    console.log(message, ...optionalParams);
+  }
+};

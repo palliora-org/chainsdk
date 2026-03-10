@@ -1,5 +1,6 @@
 import assert from "assert";
 import { getApi, getKeyring, signAndSend } from "../chain";
+import { debugLog } from "../utils";
 
 export async function fundAccount(account: any, amount: bigint, address?: string) {
   const addr = address ? address : account.address;
@@ -8,10 +9,10 @@ export async function fundAccount(account: any, amount: bigint, address?: string
 
   assert(api, "API not initialized");
 
-  console.log(`\nFunding account: ${addr} with amount: ${amount}`);
+  debugLog(`\nFunding account: ${addr} with amount: ${amount}`);
 
   const tx = api.tx.balances.transferKeepAlive(addr, amount);
   const hash = await signAndSend(tx, keyring.getPairs()[0]);
 
-  console.log(`Fund transaction sent with hash: ${hash.hash}`);
+  debugLog(`Fund transaction sent with hash: ${hash.hash}`);
 }

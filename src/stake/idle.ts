@@ -1,5 +1,6 @@
 import assert from "assert";
 import { getApi, signAndSend } from "../chain";
+import { debugLog } from "../utils";
 
 export async function joinIdleStaker(account: any, prefs: any) {
   const api = await getApi();
@@ -10,5 +11,5 @@ export async function joinIdleStaker(account: any, prefs: any) {
   const chillTx = api.tx.staking.chill();
   const hash = await signAndSend(chillTx, account);
 
-  console.log("Idle staker chill tx sent with hash:", hash.hash);
+  debugLog("Idle staker chill tx sent with hash:", hash.hash);
 }

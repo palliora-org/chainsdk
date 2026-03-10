@@ -1,5 +1,6 @@
 import assert from "assert";
 import { getApi, signAndSend } from "../chain";
+import { debugLog } from "../utils";
 
 export async function joinValidator(account: any, commission: number) {
   const api = await getApi();
@@ -10,5 +11,5 @@ export async function joinValidator(account: any, commission: number) {
   const validateTx = api.tx.staking.validate({commission, blocked: true});
   const hash = await signAndSend(validateTx, account);
 
-  console.log("Validator join tx sent with hash:", hash.hash);
+  debugLog("Validator join tx sent with hash:", hash.hash);
 }

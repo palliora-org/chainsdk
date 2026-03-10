@@ -1,5 +1,6 @@
 import assert from "assert";
 import { getApi, signAndSend } from "../chain";
+import { debugLog } from "../utils";
 
 export async function removeStake(account: any) {
   const api = await getApi();
@@ -9,10 +10,10 @@ export async function removeStake(account: any) {
 
   const stakeAmount: any = (await api.query.staking.ledger(account.address))?.toPrimitive();
 
-  console.log("Removing entire stake amount:", stakeAmount?.active || 0n);
+  debugLog("Removing entire stake amount:", stakeAmount?.active || 0n);
 
   const unstakeTx = api.tx.staking.unbond(stakeAmount?.active || 0n);
   const hash = await signAndSend(unstakeTx, account);
 
-  console.log(`Unstake transaction sent with hash: ${hash.hash}`);
+  debugLog(`Unstake transaction sent with hash: ${hash.hash}`);
 }

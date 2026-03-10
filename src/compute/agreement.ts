@@ -2,6 +2,7 @@ import bs58 from "bs58";
 import { getApi, getKeyring, signAndSend } from "../chain";
 import assert from "assert";
 import { getGuardianList } from "../guardian";
+import { debugLog } from "../utils";
 
 export async function createAgreement() {
   const api = await getApi();
@@ -30,12 +31,12 @@ export async function createAgreement() {
     });
 
     if (agreementCreatedEvent) {
-      console.log(
+      debugLog(
         "Agreement data:",
         agreementCreatedEvent.event.data.toString(),
       );
     } else {
-      console.log("AgreementCreated event not found");
+      debugLog("AgreementCreated event not found");
     }
   }
 }
