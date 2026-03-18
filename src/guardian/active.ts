@@ -1,4 +1,4 @@
-import assert from "assert";
+import { assert } from "../utils/assert";
 import { getApi } from "../chain";
 import { isFunction } from "@polkadot/util";
 

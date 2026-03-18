@@ -1,11 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "es2020",
+    "module": "ESNext",
     "moduleResolution": "Bundler",
-    "declaration": true,           // Generates .d.ts files
-    "declarationMap": true,        // Allows "Go to Definition" to jump to source
-    "baseUrl": "..",
+    "declaration": true,
+    "declarationMap": true,
     "outDir": "dist",
     "strict": true,
     "esModuleInterop": true,

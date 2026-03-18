@@ -1,6 +1,6 @@
 import bs58 from "bs58";
 import { getApi, getKeyring, signAndSend } from "../chain";
-import assert from "assert";
+import { assert } from "../utils/assert";
 import { getGuardianList } from "../guardian";
 import { debugLog } from "../utils";
 

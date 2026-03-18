@@ -1,4 +1,4 @@
-import assert from "assert";
+import { assert } from "../utils/assert";
 import { TX_WAIT_FINALIZATION } from "../config";
 import { getApi } from "./singleton";
 import { isFunction } from "@polkadot/util";

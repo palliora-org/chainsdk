@@ -1,4 +1,4 @@
-import assert from "assert";
+import { assert } from "../utils/assert";
 import { getApi, getGuardianNwParams, signAndSend } from "../chain";
 import { hexToUint8Array, debugLog } from "../utils";
 

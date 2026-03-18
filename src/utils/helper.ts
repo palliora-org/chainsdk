@@ -1,4 +1,5 @@
 import type { Hex } from "viem";
+import { DEBUG } from "../config";
 
 /**
  * Converts a token amount expressed in milliPALI into the smallest PALI denomination (10^-18 PALI) as a bigint.
@@ -131,7 +132,6 @@ export const decodeField = (
  * @param optionalParams - Additional parameters to log
  */
 export const debugLog = (message?: any, ...optionalParams: any[]) => {
-  const { DEBUG } = require("../config");
   if (DEBUG) {
     console.log(message, ...optionalParams);
   }

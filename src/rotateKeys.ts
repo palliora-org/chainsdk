@@ -1,4 +1,4 @@
-import assert from "assert";
+import { assert } from "./utils/assert";
 import { getApi, provider, signAndSend } from "./chain";
 import bs58 from 'bs58';
 import { debugLog } from "./utils/helper";
