@@ -1,6 +1,5 @@
-import { assert } from "../utils/assert";
 import { getApi, signAndSend } from "../chain";
-import { debugLog } from "../utils";
+import { assert, debugLog } from "../utils";
 
 export async function joinGuardian(account: any, prefs: any) {
   const api = await getApi();

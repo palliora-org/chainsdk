@@ -3,8 +3,8 @@ import { formatBalance } from "@polkadot/util";
 import { getApi } from "../chain";
 
 interface TokenProperties {
-	symbol: string;
-	decimals: number;
+  symbol: string;
+  decimals: number;
 }
 
 let tokenCache: TokenProperties | null = null;
@@ -16,29 +16,29 @@ let tokenCache: TokenProperties | null = null;
  * @returns Promise<TokenProperties> with symbol and decimals
  */
 export async function fetchTokenProperties(): Promise<TokenProperties> {
-	// Return cached value if available
-	if (tokenCache) {
-		return tokenCache;
-	}
+  // Return cached value if available
+  if (tokenCache) {
+    return tokenCache;
+  }
 
-	try {
-		const systemProperties = await (await getApi())?.rpc.system.properties();
+  try {
+    const systemProperties = await (await getApi())?.rpc.system.properties();
 
-		assert(systemProperties, "Failed to fetch system properties from RPC");
+    assert(systemProperties, "Failed to fetch system properties from RPC");
 
-		const tokenProperties: TokenProperties = {
-			symbol: systemProperties?.tokenSymbol.unwrapOrDefault().toString() || '',
-			decimals: Number(systemProperties?.tokenDecimals.unwrapOrDefault()) || 0,
-		};
+    const tokenProperties: TokenProperties = {
+      symbol: systemProperties?.tokenSymbol.unwrapOrDefault().toString() || "",
+      decimals: Number(systemProperties?.tokenDecimals.unwrapOrDefault()) || 0,
+    };
 
-		// Store in cache
-		tokenCache = tokenProperties;
+    // Store in cache
+    tokenCache = tokenProperties;
 
-		return tokenProperties;
-	} catch (error) {
-		console.error('Failed to fetch token properties:', error);
-		throw error;
-	}
+    return tokenProperties;
+  } catch (error) {
+    console.error("Failed to fetch token properties:", error);
+    throw error;
+  }
 }
 
 /**
@@ -46,14 +46,14 @@ export async function fetchTokenProperties(): Promise<TokenProperties> {
  * @returns TokenProperties or null if not yet cached
  */
 export function getCachedTokenProperties(): TokenProperties | null {
-	return tokenCache;
+  return tokenCache;
 }
 
 /**
  * Clear the token properties cache
  */
 export function clearTokenCache(): void {
-	tokenCache = null;
+  tokenCache = null;
 }
 
 /**
@@ -61,17 +61,20 @@ export function clearTokenCache(): void {
  * @param balance - The balance value to format
  * @returns Formatted balance string
  */
-export function formatBalanceWithTokenProperties(balance: string | number): string {
-	const tokenProperties = getCachedTokenProperties();
+export function formatBalanceWithTokenProperties(
+  balance: string | number,
+): string {
+  const tokenProperties = getCachedTokenProperties();
 
-	if (!tokenProperties) {
-		throw new Error('Token properties not yet cached. Call fetchTokenProperties first.');
-	}
+  if (!tokenProperties) {
+    throw new Error(
+      "Token properties not yet cached. Call fetchTokenProperties first.",
+    );
+  }
 
-	return formatBalance(balance, {
-		decimals: tokenProperties.decimals,
-		withSi: true,
-		withUnit: tokenProperties.symbol,
-	});
+  return formatBalance(balance, {
+    decimals: tokenProperties.decimals,
+    withSi: true,
+    withUnit: tokenProperties.symbol,
+  });
 }
-

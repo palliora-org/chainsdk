@@ -1,7 +1,7 @@
-import { assert } from "./utils/assert";
 import { getApi, provider, signAndSend } from "./chain";
 import bs58 from 'bs58';
 import { debugLog } from "./utils/helper";
+import assert from "assert";
 
 export async function rotateAndSetKeys(account: any) {
   const api = await getApi();

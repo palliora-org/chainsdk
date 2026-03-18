@@ -1,6 +1,5 @@
-import { assert } from "../utils/assert";
 import { getApi, signAndSend } from "../chain";
-import { debugLog } from "../utils";
+import { assert, debugLog } from "../utils";
 
 export async function transfer(account: any, amount: bigint, address: string) {
   const api = await getApi();

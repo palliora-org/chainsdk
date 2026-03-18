@@ -1,6 +1,5 @@
-import { assert } from "../utils/assert";
 import { getApi, getGuardianNwParams, signAndSend } from "../chain";
-import { hexToUint8Array, debugLog } from "../utils";
+import { hexToUint8Array, debugLog, assert } from "../utils";
 
 export const createGuardianGroup = async (account: any, selectedGuardians: any) => {
   try {
