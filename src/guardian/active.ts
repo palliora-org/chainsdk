@@ -1,6 +1,6 @@
-import assert from "assert";
 import { getApi } from "../chain";
 import { isFunction } from "@polkadot/util";
+import { assert } from "../utils";
 
 export const getGuardianList = async () => {
   try {

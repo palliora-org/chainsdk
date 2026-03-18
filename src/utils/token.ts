@@ -1,4 +1,4 @@
-import { assert } from "console";
+import { assert } from "./assert";
 import { formatBalance } from "@polkadot/util";
 import { getApi } from "../chain";
 
@@ -25,18 +25,18 @@ export async function fetchTokenProperties(): Promise<TokenProperties> {
     const systemProperties = await (await getApi())?.rpc.system.properties();
 
     assert(systemProperties, "Failed to fetch system properties from RPC");
-    
+
     const tokenProperties: TokenProperties = {
-      symbol: systemProperties?.tokenSymbol.unwrapOrDefault().toString() || '',
+      symbol: systemProperties?.tokenSymbol.unwrapOrDefault().toString() || "",
       decimals: Number(systemProperties?.tokenDecimals.unwrapOrDefault()) || 0,
     };
 
     // Store in cache
     tokenCache = tokenProperties;
-    
+
     return tokenProperties;
   } catch (error) {
-    console.error('Failed to fetch token properties:', error);
+    console.error("Failed to fetch token properties:", error);
     throw error;
   }
 }
@@ -61,11 +61,15 @@ export function clearTokenCache(): void {
  * @param balance - The balance value to format
  * @returns Formatted balance string
  */
-export function formatBalanceWithTokenProperties(balance: string | number): string {
+export function formatBalanceWithTokenProperties(
+  balance: string | number,
+): string {
   const tokenProperties = getCachedTokenProperties();
-  
+
   if (!tokenProperties) {
-    throw new Error('Token properties not yet cached. Call fetchTokenProperties first.');
+    throw new Error(
+      "Token properties not yet cached. Call fetchTokenProperties first.",
+    );
   }
 
   return formatBalance(balance, {
@@ -74,4 +78,3 @@ export function formatBalanceWithTokenProperties(balance: string | number): stri
     withUnit: tokenProperties.symbol,
   });
 }
-

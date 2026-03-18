@@ -218,7 +218,9 @@ export async function getApi() {
       signedExtensions: API_EXTENSIONS,
     });
   }
-  if (process.env.NODE_ENV !== "test") {
+  const isNode = typeof process !== "undefined" && typeof process.exit === "function";
+  const isTest = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
+  if (isNode && !isTest) {
     api.on("error", (err) => {
       console.error("api error, will restart:", err);
       process.exit(0);

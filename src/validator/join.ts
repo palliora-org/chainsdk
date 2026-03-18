@@ -1,6 +1,5 @@
-import assert from "assert";
 import { getApi, signAndSend } from "../chain";
-import { debugLog } from "../utils";
+import { assert, debugLog } from "../utils";
 
 export async function joinValidator(account: any, commission: number) {
   const api = await getApi();

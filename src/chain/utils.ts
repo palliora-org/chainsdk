@@ -1,10 +1,10 @@
-import assert from "assert";
 import { TX_WAIT_FINALIZATION } from "../config";
 import { getApi } from "./singleton";
 import { isFunction } from "@polkadot/util";
 import { DEFAULT_COMPUTE_PAYLOAD } from "./spec";
 import bs58 from "bs58";
 import { getGuardianList } from "../guardian";
+import { assert } from "../utils";
 
 export const signAndSend = async (request: any, account: any, opts = DEFAULT_COMPUTE_PAYLOAD) => {
   const tx_result: any = await new Promise((res, err) => {

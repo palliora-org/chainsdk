@@ -1,10 +1,20 @@
-import dotenv from "dotenv";
-dotenv.config();
+const env = typeof process !== "undefined" && process.env ? process.env : {} as Record<string, string | undefined>;
 
-export const PALLIORA_WS = process.env.PALLIORA_WS || "wss://manas-rpc.palliora.org";
-export const PALLIORA_RPC_URL = process.env.PALLIORA_RPC_URL || "wss://manas-rpc.palliora.org";
+export let PALLIORA_WS = env.PALLIORA_WS || "wss://manas-rpc.palliora.org";
+export let PALLIORA_RPC_URL = env.PALLIORA_RPC_URL || "wss://manas-rpc.palliora.org";
 
-// Debug flag for logging/tracing wrapper function execution
-export const DEBUG = process.env.DEBUG === "true" || false;
+export let DEBUG = env.DEBUG === "true" || false;
 
-export const TX_WAIT_FINALIZATION = process.env.TX_WAIT_FINALIZATION === "true" || false;
+export let TX_WAIT_FINALIZATION = env.TX_WAIT_FINALIZATION === "true" || false;
+
+export function configure(opts: {
+  pallioraWs?: string;
+  pallioraRpcUrl?: string;
+  debug?: boolean;
+  txWaitFinalization?: boolean;
+}) {
+  if (opts.pallioraWs !== undefined) PALLIORA_WS = opts.pallioraWs;
+  if (opts.pallioraRpcUrl !== undefined) PALLIORA_RPC_URL = opts.pallioraRpcUrl;
+  if (opts.debug !== undefined) DEBUG = opts.debug;
+  if (opts.txWaitFinalization !== undefined) TX_WAIT_FINALIZATION = opts.txWaitFinalization;
+}

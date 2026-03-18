@@ -1,6 +1,5 @@
-import assert from "assert";
 import { getApi, getKeyring, signAndSend } from "../chain";
-import { debugLog } from "../utils";
+import { assert, debugLog } from "../utils";
 
 export async function fundAccount(account: any, amount: bigint, address?: string) {
   const addr = address ? address : account.address;

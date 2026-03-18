@@ -1,6 +1,5 @@
-import assert from "assert";
 import { getApi, signAndSend } from "../chain";
-import { debugLog } from "../utils";
+import { assert, debugLog } from "../utils";
 
 export async function payoutStake(account: any, eras: Array<number>) {
   const api = await getApi();

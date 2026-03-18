@@ -1,6 +1,5 @@
-import assert from "assert";
 import { getApi, signAndSend } from "../chain";
-import { debugLog } from "../utils";
+import { assert, debugLog } from "../utils";
 
 export async function removeStake(account: any) {
   const api = await getApi();
