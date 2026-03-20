@@ -644,7 +644,7 @@ const testCrypt = (
 	}
 };
 
-function bigintToBigEndianHex(value: BigInt, length: number): string {
+function bigintToBigEndianHex(value: bigint, length: number): string {
 	// Convert BigInt to hex string without the '0x' prefix
 	let hex = value.toString(16);
 

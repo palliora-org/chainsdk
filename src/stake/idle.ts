@@ -1,7 +1,7 @@
 import { getApi, signAndSend } from "../chain";
 import { assert, debugLog } from "../utils";
 
-export async function joinIdleStaker(account: any, prefs: any) {
+export async function joinIdleStaker(account: any) {
   const api = await getApi();
 
   assert(api, "API not initialized");

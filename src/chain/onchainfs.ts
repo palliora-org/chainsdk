@@ -1,17 +1,10 @@
 
-import { ApiPromise, Keyring } from "@polkadot/api";
+import { ApiPromise } from "@polkadot/api";
 import { testCrypt } from "../crypto/core";
 import { encrypt, gen_stretched_key } from "../crypto/cipher";
 import { hexToUint8Array, uint8ArrayToBase64 } from "../utils";
 import type { Hex } from "viem";
 import { signAndSend } from "./utils";
-
-// Utility functions
-//
-type OnChainRef = {
-	blockNumber: number | undefined;
-	index: number | undefined;
-};
 
 type OnChainFileOptions = {
 	file: File;
@@ -22,19 +15,6 @@ type OnChainFileOptions = {
 	ownerL2Address: string;
 	guardianInfo: any;
 }
-
-// Crypto-related types
-interface KZG {
-	// Add your KZG interface properties here
-}
-
-interface AggKey {
-	// Add your AggKey interface properties here
-}
-
-// These should be imported from your crypto library
-declare const kzg: KZG;
-declare const agg_key: AggKey;
 
 const getBlock = async (api: ApiPromise, blockNumber: number) => {
 	const blockHash = await api.rpc.chain.getBlockHash(blockNumber);
@@ -49,11 +29,11 @@ const getFileMetadataCall = async (api: ApiPromise, metadataRef: any) => {
 const getFileMetadata = async (api: ApiPromise, metadataRef: any) => {
 	const call = await getFileMetadataCall(api, metadataRef);
 
-	// @ts-ignore
+	// @ts-expect-error
 	const name = new TextDecoder().decode(call.args[0]);
-	// @ts-ignore
+	// @ts-expect-error
 	const description = new TextDecoder().decode(call.args[1]);
-	// @ts-ignore
+	// @ts-expect-error
 	const startRef = [call.args[2][0].toNumber(), call.args[2][1].toNumber()];
 
 	return {

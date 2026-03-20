@@ -8,7 +8,7 @@ import { assert } from "../utils";
 
 export const signAndSend = async (request: any, account: any, opts = DEFAULT_COMPUTE_PAYLOAD) => {
   const tx_result: any = await new Promise((res, err) => {
-    request.signAndSend(account, (result: any) => {
+    request.signAndSend(account, opts, (result: any) => {
       // console.trace(result.toHuman());
       if (result.isFinalized) {
         res(result);
@@ -60,28 +60,24 @@ const getBlock = async (api: any, blockNumber: number) => {
 };
 
 export const getGuardianAddress = async () => {
-  try {
-    const api = await getApi();
+  const api = await getApi();
 
-    if (!api) throw new Error("API not initialized");
-    assert(
-      isFunction(api.query["guardian"]?.["worker"]),
-      `api.query.guardian.worker does not exist`,
-    );
+  if (!api) throw new Error("API not initialized");
+  assert(
+    isFunction(api.query["guardian"]?.["worker"]),
+    `api.query.guardian.worker does not exist`,
+  );
 
-    const list = await getGuardianList();
+  const list = await getGuardianList();
 
-    const addresses = await Promise.all(
-      list.map(async (item) => {
-        const peerid = bs58.decode(item).slice(0, 32);
-        return ((await api.query["guardian"]["worker"](peerid)).toString());
-      })
-    );
+  const addresses = await Promise.all(
+    list.map(async (item) => {
+      const peerid = bs58.decode(item).slice(0, 32);
+      return ((await api.query["guardian"]["worker"](peerid)).toString());
+    })
+  );
 
-    return list.map((peerid, index) => ({ peerid, address: addresses[index] }));
-  } catch (error) {
-    throw error;
-  }
+  return list.map((peerid, index) => ({ peerid, address: addresses[index] }));
 };
 
 export const getGuardianNwParams = async () => {

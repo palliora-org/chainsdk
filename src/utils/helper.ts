@@ -110,7 +110,7 @@ export const decodeField = (
   field: string,
   expectedLength?: number
 ): Uint8Array => {
-  let bytes = base64ToUint8Array(field);
+  const bytes = base64ToUint8Array(field);
   if (expectedLength && bytes.length !== expectedLength) {
     // If we got exactly twice as many bytes as expected, assume double-encoding.
     if (bytes.length === expectedLength * 2) {
