@@ -61,11 +61,9 @@ export function clearTokenCache(): void {
  * @param balance - The balance value to format
  * @returns Formatted balance string
  */
-export function formatBalanceWithTokenProperties(
-  balance: string | number,
-): string {
-  const tokenProperties = getCachedTokenProperties();
-
+export async function formatBalanceWithTokenProperties(balance: string | number): Promise<string> {
+  const tokenProperties = await fetchTokenProperties();
+  
   if (!tokenProperties) {
     throw new Error(
       "Token properties not yet cached. Call fetchTokenProperties first.",
