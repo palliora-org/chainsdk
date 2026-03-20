@@ -22,13 +22,13 @@ export async function fetchTokenProperties(): Promise<TokenProperties> {
   }
 
   try {
-    const systemProperties = await (await getApi())?.rpc.system.properties();
+    const systemProperties = (await (await getApi())?.rpc.system.properties())?.toHuman();
 
     assert(systemProperties, "Failed to fetch system properties from RPC");
 
     const tokenProperties: TokenProperties = {
-      symbol: systemProperties?.tokenSymbol.unwrapOrDefault().toString() || "",
-      decimals: Number(systemProperties?.tokenDecimals.unwrapOrDefault()) || 0,
+      symbol: (systemProperties?.tokenSymbol as string[] || ["UNIT"])[0],
+      decimals: Number((systemProperties?.tokenDecimals as string[] || ['18'])[0]),
     };
 
     // Store in cache
