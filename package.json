@@ -34,7 +34,7 @@
     "build": "tsup",
     "clean": "rimraf dist",
     "lint": "eslint src",
-    "prepare": "pnpm build",
+    "prepare": "tsup",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
