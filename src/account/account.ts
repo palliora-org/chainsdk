@@ -53,7 +53,7 @@ export async function createAccount(
   }
 }
 
-function pairFromPrivateKeyHex(privateKeyHex: string, cryptoType: CryptoType) {
+export function pairFromPrivateKeyHex(privateKeyHex: string, cryptoType: CryptoType) {
   const privateKey = hexToU8a(privateKeyHex);
 
   switch (cryptoType) {
