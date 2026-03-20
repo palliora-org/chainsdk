@@ -1,3 +1,4 @@
+export * from "./account";
 export * from "./chain";
 export * from "./compute";
 export * from "./crypto";
