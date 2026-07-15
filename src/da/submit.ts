@@ -97,14 +97,14 @@ export async function submitTEDataWithCipher(
     ref,
     cipher: {
         ThresholdHybrid: {
-          threshold_params: {
+          thresholdParams: {
           SilentThreshold: {
-            td_params: Array.from(hexToUint8Array(encryptedKey as Hex)),
-            pk_bytes: Array.from(hexToUint8Array(group_pk as Hex)),
-            tau_params: Array.from(hexToUint8Array(tau_params as Hex)),
+            tdParams: Array.from(hexToUint8Array(encryptedKey as Hex)),
+            pkBytes: Array.from(hexToUint8Array(group_pk as Hex)),
+            tauParams: Array.from(hexToUint8Array(tau_params as Hex)),
           },
         },
-          symmetric_params: {
+          symmetricParams: {
           ChaCha20Poly1305: { nonce: Array.from(nonce) },
         },
       },

@@ -8,11 +8,11 @@ export interface OnChainRef {
 
 export interface SilentThresholdParams {
   /** Encoded threshold ciphertext bytes (from encodeCiphertext). */
-  td_params: number[];
+  tdParams: number[];
   /** Guardian group aggregate public key bytes. */
-  pk_bytes: number[];
+  pkBytes: number[];
   /** KZG powers-of-tau bytes. */
-  tau_params: number[];
+  tauParams: number[];
 }
 
 export type ThresholdParams = { SilentThreshold: SilentThresholdParams };
@@ -24,8 +24,8 @@ export type SymmetricParams =
 export type KdfParams = "HkdfSha256" | "HkdfSha512";
 
 export interface Secp256k1Params {
-  recipient_public_key: number[];
-  ephemeral_public_key?: number[] | null;
+  recipientPublicKey: number[];
+  ephemeralPublicKey?: number[] | null;
   compressed: boolean;
   kdf: KdfParams;
   salt?: number[] | null;
@@ -33,8 +33,8 @@ export interface Secp256k1Params {
 }
 
 export interface Ed25519Params {
-  recipient_public_key: number[];
-  ephemeral_public_key?: number[] | null;
+  recipientPublicKey: number[];
+  ephemeralPublicKey?: number[] | null;
   kdf: KdfParams;
   salt?: number[] | null;
   info?: number[] | null;
@@ -45,13 +45,13 @@ export type AsymmetricParams =
   | { Ed25519: Ed25519Params };
 
 export interface ThresholdHybridParams {
-  threshold_params: ThresholdParams;
-  symmetric_params: SymmetricParams;
+  thresholdParams: ThresholdParams;
+  symmetricParams: SymmetricParams;
 }
 
 export interface AsymmetricHybridParams {
-  asymmetric_params: AsymmetricParams;
-  symmetric_params: SymmetricParams;
+  asymmetricParams: AsymmetricParams;
+  symmetricParams: SymmetricParams;
 }
 
 /** Mirrors the on-chain CipherSuite enum from spec.ts. */
@@ -83,6 +83,6 @@ export interface UploadOptions {
   guardianGroupInfo: GuardianGroupInfo;
   ref?: string;
   filePath?: string;
-  /** Options forwarded to signAndSend. Defaults to dormant DA payload (da_type=1, compute=0). */
+  /** Options forwarded to signAndSend. Defaults to dormant DA payload (daType=1, compute=0). */
   opts?: { compute: ComputePayload };
 }

@@ -20,7 +20,7 @@ interface SubmittableResultExtended extends ISubmittableResult {
 
 export const signAndSend = async (request: SubmittableExtrinsic<'promise'>, account: KeyringPair, opts: Record<string, unknown> = DEFAULT_COMPUTE_PAYLOAD) => {
   const tx_result: SubmittableResultExtended = await new Promise((res, err) => {
-    // opts contains custom chain-specific fields (da_type, compute, etc.) that extend SignerOptions
+    // opts contains custom chain-specific fields (daType, compute, etc.) that extend SignerOptions
     request.signAndSend(account, opts as Parameters<typeof request.signAndSend>[1], (result: SubmittableResultExtended) => {
       // console.trace(result.toHuman());
       if (result.isFinalized) {

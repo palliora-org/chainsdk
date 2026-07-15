@@ -22,7 +22,6 @@ export async function uploadData(options: UploadOptions) {
   console.log("Guardian group info:", guardianGroupInfo);
 
   const account = (await getKeyring()).pairs[0];
-  const atomicPrice = toAtomicPaliAmount(price);
 
   if (filePath) {
     throw new Error("uploadData: file path upload is not implemented");
@@ -40,7 +39,7 @@ export async function uploadData(options: UploadOptions) {
     await registerDataAgreement(account, {
       ref: dataRef,
       guardians: guardianGroupInfo.guardians,
-      fees: atomicPrice,
+      fee: { amount: price },
       cipher,
       metadata: {
         name,

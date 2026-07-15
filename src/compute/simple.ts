@@ -1,7 +1,7 @@
 import { KeyringPair } from "@polkadot/keyring/types";
 import { getKeyring } from "../chain";
-import { createAgreement } from "../compute";
-import { toAtomicPaliAmount, type PaliAmountInput } from "../utils/token";
+import { createAgreement, buildFee } from "../compute";
+import type { Fee } from "../chain/types";
 
 export interface SimpleComputeParams {
   /** Guardian account IDs that participate in this compute. */
@@ -12,8 +12,8 @@ export interface SimpleComputeParams {
   inputExtrinsicIndex?: number;
   /** Program location as URL. */
   programUrl: string;
-  /** Fee offered for the compute step in PALI. Defaults to 0. */
-  fees?: PaliAmountInput;
+  /** Fee offered for the compute step. Defaults to 0 amount and 0 compute rate. */
+  fee?: Fee;
   /** Block number deadline for the compute step. Defaults to 0 (no deadline). */
   deadline?: number;
   /** Trusted guardian index in the guardians list. Defaults to 0. */
@@ -30,14 +30,13 @@ export interface SimpleComputeParams {
  */
 export async function simpleCompute(params: SimpleComputeParams, account: KeyringPair) {
   const plaintextCipher = "Plaintext";
-  const atomicFees = toAtomicPaliAmount(params.fees ?? "0");
   const computeStep = {
     cipher: plaintextCipher,
-    computer_indices: params.guardians.map((_, i) => i),
-    fees: atomicFees,
+    computerIndices: params.guardians.map((_, i) => i),
+    ...buildFee(params.fee),
     deadline: params.deadline ?? 0,
     confidentiality: { Trusted: params.trustIndex ?? 0 },
-    fee_function: null,
+    feeFunction: null,
     input: null,
     program: {
       Url: {
@@ -47,12 +46,12 @@ export async function simpleCompute(params: SimpleComputeParams, account: Keyrin
   };
 
   const contract = {
-    contract_type: "Active" as const,
+    contractType: "Active" as const,
     guardians: params.guardians,
-    pre_check: null,
+    preCheck: null,
     compute: computeStep,
-    post_check: null,
-    result_cipher: plaintextCipher,
+    postCheck: null,
+    resultCipher: plaintextCipher,
   };
 
   return createAgreement(contract, account);

@@ -1,8 +1,9 @@
 import { getApi, signAndSend } from "../chain";
-import { createAgreement } from "../compute";
+import { createAgreement, buildFee } from "../compute";
 import { assert, debugLog } from "../utils";
-import { formatPaliAmount } from "../utils/token";
+import { formatPaliAmount, toAtomicPaliAmount } from "../utils/token";
 import { CipherSuite, OnChainRef } from "./types";
+import type { Fee } from "../chain/types";
 import type { KeyringPair } from "@polkadot/keyring/types";
 
 export async function writeMetadata(
@@ -57,8 +58,11 @@ export interface DataAgreementParams {
   ref: OnChainRef;
   /** Guardian account IDs that participate in this agreement. */
   guardians: string[];
-  /** Fee for the agreement in PALI atomic units. */
-  fees: bigint;
+  /**
+   * Absolute fee for the agreement. `computeRate` is omitted: this is a
+   * `Dormant` contract and the compute rate only applies to `Active` contracts.
+   */
+  fee: Pick<Fee, "amount">;
   /** If provided, populates ComputeInfo.metadata in the contract. */
   metadata?: DataAgreementMetadata;
   /** Block number deadline. Defaults to 0 (no deadline). */
@@ -81,7 +85,7 @@ export async function registerDataAgreement(
   params: DataAgreementParams,
 ) {
   debugLog(
-    `Registering data agreement for DA ref ${params.ref.blockNumber}-${params.ref.index} at ${formatPaliAmount(params.fees)}`,
+    `Registering data agreement for DA ref ${params.ref.blockNumber}-${params.ref.index} at ${formatPaliAmount(toAtomicPaliAmount(params.fee.amount ?? "0"))}`,
   );
 
   const cipher = params.cipher ?? "Plaintext";
@@ -91,22 +95,22 @@ export async function registerDataAgreement(
     ? {
         name: Array.from(encoder.encode(params.metadata.name)),
         description: Array.from(encoder.encode(params.metadata.description)),
-        store_type: params.metadata.storeType,
-        group_id: params.metadata.groupId,
+        storeType: params.metadata.storeType,
+        groupId: params.metadata.groupId,
       }
     : null;
 
   const computeStep = {
     cipher,
-    computer_indices: params.guardians.map((_, i) => i),
-    fees: params.fees,
+    computerIndices: params.guardians.map((_, i) => i),
+    ...buildFee(params.fee),
     deadline: params.deadline ?? 0,
     confidentiality: { Trusted: params.trustIndex ?? 0 },
-    fee_function: null,
+    feeFunction: null,
     input: {
       ChainTransaction: {
-        block_number: params.ref.blockNumber,
-        extrinsic_index: params.ref.index,
+        blockNumber: params.ref.blockNumber,
+        extrinsicIndex: params.ref.index,
       },
     },
     program: {
@@ -116,12 +120,12 @@ export async function registerDataAgreement(
   };
 
   const contract = {
-    contract_type: "Dormant" as const,
+    contractType: "Dormant" as const,
     guardians: params.guardians,
-    pre_check: null,
+    preCheck: null,
     compute: computeStep,
-    post_check: null,
-    result_cipher: resultCipher,
+    postCheck: null,
+    resultCipher,
   };
 
   return createAgreement(contract, account);

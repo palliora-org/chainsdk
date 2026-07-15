@@ -3,19 +3,34 @@ import { assert, debugLog, toAtomicPaliAmount } from "../utils";
 import type { KeyringPair } from "@polkadot/keyring/types";
 import type { SubmittableExtrinsic } from "@polkadot/api/types";
 import type { GuardianAddress } from "../da/types";
+import type { Fee } from "../chain/types";
+
+/**
+ * Converts a {@link Fee} into the on-chain `fees` / `computeRate` pair.
+ * `computeRate` only has meaning for `Active` contracts (it drives dynamic
+ * fee calculation during `compute.result`); omit `computeRate` for `Dormant`
+ * contracts.
+ */
+export function buildFee(fee?: Fee) {
+  return {
+    fees: toAtomicPaliAmount(fee?.amount ?? "0"),
+    computeRate: toAtomicPaliAmount(fee?.computeRate ?? "0"),
+  };
+}
 
 export interface ComputeContract {
-  contract_type: "Active" | "Dormant";
+  contractType: "Active" | "Dormant";
   guardians: GuardianAddress[];
-  pre_check?: unknown;
+  preCheck?: unknown;
   compute: Record<string, unknown>;
-  post_check?: unknown;
-  result_cipher: unknown;
+  postCheck?: unknown;
+  resultCipher: unknown;
 }
 
 export async function createAgreement(
   contract: ComputeContract,
   account: KeyringPair,
+  oracle_quore_id: string | undefined = undefined,
 ): Promise<{
   blockNumber: number;
   index: number;
@@ -30,12 +45,12 @@ export async function createAgreement(
       string,
       Record<string, (...args: unknown[]) => SubmittableExtrinsic<"promise">>
     >
-  )["compute"]["agreement"](contract);
+  )["compute"]["agreement"](contract, oracle_quore_id ?? null);
   const opts = {
     compute: {
-      da_type: 1,
+      daType: 1,
       verification: 0,
-      compute: contract.contract_type === "Active" ? 1 : 0,
+      compute: contract.contractType === "Active" ? 1 : 0,
     },
   };
 
@@ -82,22 +97,22 @@ export async function createSimpleAgreement() {
   assert(guardianIds.length === 3, "Not enough guardians to create agreement");
 
   const contract = {
-    contract_type: "Dormant" as const,
+    contractType: "Dormant" as const,
     guardians: guardianIds,
-    pre_check: null,
+    preCheck: null,
     compute: {
       cipher: "Plaintext",
-      computer_indices: [0, 1, 2],
-      fees: toAtomicPaliAmount("0.01") ,
+      computerIndices: [0, 1, 2],
+      ...buildFee({ amount: "0", computeRate: "0" }),
       deadline: 0,
       confidentiality: { Trusted: 0 },
-      fee_function: null,
+      feeFunction: null,
       input: null,
       program: { NativeData: "DaFalse" },
       metadata: null,
     },
-    post_check: null,
-    result_cipher: "Plaintext",
+    postCheck: null,
+    resultCipher: "Plaintext",
   };
 
   const keyring = await getKeyring();

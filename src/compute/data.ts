@@ -1,15 +1,19 @@
 import { KeyringPair } from "@polkadot/keyring/types";
 import { getKeyring } from "../chain";
-import { createAgreement } from "../compute";
-import { toAtomicPaliAmount, type PaliAmountInput } from "../utils/token";
+import { createAgreement, buildFee } from "../compute";
+import type { Fee } from "../chain/types";
 
 export interface DataContractParams {
   /** URL pointing to the data to store. */
   url: string;
   /** Guardian account IDs that participate in this contract. */
   guardians: string[];
-  /** Fee offered for the contract in PALI. Defaults to 0. */
-  fees?: PaliAmountInput;
+  /**
+   * Absolute fee offered for the contract. Defaults to 0.
+   * `computeRate` is omitted: this is a `Dormant` contract and the
+   * compute rate only applies to `Active` contracts.
+   */
+  fee: Fee;
   /** Block number deadline. Defaults to 0 (no deadline). */
   deadline?: number;
   /** Trusted guardian index in the guardians list. Defaults to 0. */
@@ -27,15 +31,14 @@ export interface DataContractParams {
  */
 export async function dataContract(params: DataContractParams, account: KeyringPair) {
   const plaintextCipher = "Plaintext";
-  const atomicFees = toAtomicPaliAmount(params.fees ?? "0");
 
   const computeStep = {
     cipher: plaintextCipher,
-    computer_indices: params.guardians.map((_, i) => i),
-    fees: atomicFees,
+    computerIndices: params.guardians.map((_, i) => i),
+    ...buildFee(params.fee),
     deadline: params.deadline ?? 0,
     confidentiality: { Trusted: params.trustIndex ?? 0 },
-    fee_function: null,
+    feeFunction: null,
     input: {
       Url: {
         url: Array.from(new TextEncoder().encode(params.url)),
@@ -47,12 +50,12 @@ export async function dataContract(params: DataContractParams, account: KeyringP
   };
 
   const contract = {
-    contract_type: "Dormant" as const,
+    contractType: "Dormant" as const,
     guardians: params.guardians,
-    pre_check: null,
+    preCheck: null,
     compute: computeStep,
-    post_check: null,
-    result_cipher: plaintextCipher,
+    postCheck: null,
+    resultCipher: plaintextCipher,
   };
 
   return createAgreement(contract, account);

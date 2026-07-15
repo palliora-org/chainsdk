@@ -7,7 +7,7 @@ export type Hex = `0x${string}`;
  */
 export interface ComputePayload {
   /** DA type: 0 = none, 1 = DA. */
-  da_type: number;
+  daType: number;
   /** Guardian agreement keys. Each element is a 32-byte Uint8Array or number[]. */
   agreement?: Uint8Array[] | number[][];
   /** Verification mode. */

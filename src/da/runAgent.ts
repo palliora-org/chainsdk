@@ -38,7 +38,7 @@ export async function runAgent(
 
   const opts = {
     compute: {
-      da_type: 4,
+      daType: 4,
       verification: 0,
       compute: 1,
       agreement: [agreementId]

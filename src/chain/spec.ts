@@ -90,7 +90,7 @@ export const API_TYPES = {
 	},
 	GuardianNwParams: {
 		kzg: 'Vec<u8>',
-		agg_key: 'Vec<u8>'
+		aggKey: 'Vec<u8>'
 	},
 	AppId: "Compact<u32>",
 	DataLookupItem: {
@@ -141,9 +141,9 @@ export const API_TYPES = {
 		verifier: "u128",
 	},
 	SilentThresholdParams: {
-		td_params: 'Vec<u8>',
-		pk_bytes: 'Vec<u8>',
-		tau_params: 'Vec<u8>'
+		tdParams: 'Vec<u8>',
+		pkBytes: 'Vec<u8>',
+		tauParams: 'Vec<u8>'
 	},
 	ThresholdParams: {
 		_enum: {
@@ -169,16 +169,16 @@ export const API_TYPES = {
 		}
 	},
 	Secp256k1Params: {
-		recipient_public_key: 'Vec<u8>',
-		ephemeral_public_key: 'Option<Vec<u8>>',
+		recipientPublicKey: 'Vec<u8>',
+		ephemeralPublicKey: 'Option<Vec<u8>>',
 		compressed: 'bool',
 		kdf: 'KdfParams',
 		salt: 'Option<Vec<u8>>',
 		info: 'Option<Vec<u8>>'
 	},
 	Ed25519Params: {
-		recipient_public_key: 'Vec<u8>',
-		ephemeral_public_key: 'Option<Vec<u8>>',
+		recipientPublicKey: 'Vec<u8>',
+		ephemeralPublicKey: 'Option<Vec<u8>>',
 		kdf: 'KdfParams',
 		salt: 'Option<Vec<u8>>',
 		info: 'Option<Vec<u8>>'
@@ -190,12 +190,12 @@ export const API_TYPES = {
 		}
 	},
 	ThresholdHybridParams: {
-		threshold_params: 'ThresholdParams',
-		symmetric_params: 'SymmetricParams'
+		thresholdParams: 'ThresholdParams',
+		symmetricParams: 'SymmetricParams'
 	},
 	AsymmetricHybridParams: {
-		asymmetric_params: 'AsymmetricParams',
-		symmetric_params: 'SymmetricParams'
+		asymmetricParams: 'AsymmetricParams',
+		symmetricParams: 'SymmetricParams'
 	},
 	CipherSuite: {
 		_enum: {
@@ -213,7 +213,7 @@ export const API_TYPES = {
 		}
 	},
 	NativeExecuteDA: {
-		_enum: ['Inference']
+		_enum: ['Inference', 'ContractAccess']
 	},
 	NativeDataDA: {
 		_enum: ['DaFalse', 'DaTrue']
@@ -222,8 +222,11 @@ export const API_TYPES = {
 		data: 'Vec<u8>'
 	},
 	DAInputChainTransaction: {
-		block_number: 'u64',
-		extrinsic_index: 'u32'
+		blockNumber: 'u64',
+		extrinsicIndex: 'u32'
+	},
+	DAInputContractId: {
+		id: '[u8; 32]'
 	},
 	DAInputIpfs: {
 		cid: 'Vec<u8>',
@@ -239,6 +242,7 @@ export const API_TYPES = {
 		Null: 'Null',
 		Inline: 'DAInputInline',
 		ChainTransaction: 'DAInputChainTransaction',
+		ContractId: 'DAInputContractId',
 		Ipfs: 'DAInputIpfs',
 		Url: 'DAInputUrl',
 		NativeExecute: 'NativeExecuteDA',
@@ -248,7 +252,8 @@ export const API_TYPES = {
 	ContractType: {
 		_enum: {
 		Dormant: 'Null',
-		Active: 'Null'
+		Active: 'Null',
+		Subscription: 'Null',
 		}
 	},
 	StoreType: {
@@ -262,28 +267,29 @@ export const API_TYPES = {
 	ComputeMetadata: {
 		name: 'Vec<u8>',
 		description: 'Vec<u8>',
-		store_type: 'StoreType',
-		group_id: 'H256',
+		storeType: 'StoreType',
+		groupId: 'H256',
 	},
 	ComputeInfo: {
 		cipher: 'CipherSuite',
-		computer_indices: 'Vec<u32>',
+		computerIndices: 'Vec<u32>',
 		fees: 'u128',
+		computeRate: 'u128',
 		deadline: 'u64',
 		confidentiality: 'ConfidentialityLevel',
-		fee_function: 'Option<u8>',
-		program_env: 'Option<Vec<u8>>',
+		feeFunction: 'Option<u8>',
+		programEnv: 'Option<Vec<u8>>',
 		input: 'DAInput',
 		program: 'DAInput',
 		metadata: 'Option<ComputeMetadata>',
 	},
 	Contract: {
-		contract_type: 'ContractType',
+		contractType: 'ContractType',
 		guardians: 'Vec<AccountId>',
-		pre_check: 'Option<ComputeInfo>',
+		preCheck: 'Option<ComputeInfo>',
 		compute: 'ComputeInfo',
-		post_check: 'Option<ComputeInfo>',
-		result_cipher: 'CipherSuite'
+		postCheck: 'Option<ComputeInfo>',
+		resultCipher: 'CipherSuite'
 	},
 	AgreementInfo: {
 		status: 'AgreementStatus',
@@ -291,7 +297,7 @@ export const API_TYPES = {
 		index: 'u32'
 	},
     ComputePayload: {
-		da_type: "u8",
+		daType: "u8",
 		agreement: "Option<BoundedVec<[u8; 32], 10>>",
 		verification: "u8",
 		compute: "u8",
@@ -368,10 +374,46 @@ export const API_TYPES = {
 	GProof: "[u8; 48]",
 	GRow: "Vec<GRawScalar>",
 	GDataProof: "(GRawScalar, GProof)",
+	AgreementStatus: {
+		_enum: ['NotFound', 'Pending', 'Accepted', 'Rejected', 'Settled']
+	},
+	AcceptedSubStatus: {
+		_enum: ['Running', 'AwaitingTopUp', 'TopUpReceived', 'RejectedInsufficientBudget', 'RejectedRateMismatch']
+	},
+	RejectedSubStatus: {
+		_enum: ['InsufficientBudget', 'RateMismatch']
+	},
+	SettlementReason: {
+		_enum: ['ResultReceived', 'DeadlineReached', 'BudgetExhausted']
+	},
+	ExecutionOutcome: {
+		_enum: ['FullSettlement', 'PartialSettlement', 'Success', 'Failed', 'Terminated', 'TopUpTimeout']
+	},
+	ContractInfo: {
+		status: 'AgreementStatus',
+		owner: 'AccountId',
+		originBlock: 'u32',
+		invocationBlock: 'u32',
+		index: 'u32',
+		usagePrice: 'u128',
+		contractType: 'ContractType',
+	},
+	SettlementInfo: {
+		computeRate: 'u128',
+		inputContractId: 'Option<[u8; 32]>',
+		guardians: 'Vec<AccountId>',
+	},
+	AppKeyInfo: {
+		owner: 'AccountId',
+		id: 'AppId',
+	},
+	DataType: {
+		_enum: ['Dataset', 'Model', 'Agent']
+	},
 };
 
-export const DEFAULT_COMPUTE_PAYLOAD =  { compute: { da_type: 0, verification: 0, compute: 0 } };
-export const DEFAULT_EMPTY_PAYLOAD =  { compute: { da_type: 0, verification: 0, compute: 0, agreement: [] } };
+export const DEFAULT_COMPUTE_PAYLOAD =  { compute: { daType: 0, verification: 0, compute: 0 } };
+export const DEFAULT_EMPTY_PAYLOAD =  { compute: { daType: 0, verification: 0, compute: 0, agreement: [] } };
 
 export const API_EXTENSIONS = {
 	CheckAppId: {
