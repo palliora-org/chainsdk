@@ -54,6 +54,7 @@ async function main() {
     cipher: 'Plaintext',
     computer_indices: guardians.map((_, i) => i),
     fees: 200,
+    compute_rate: 0,
     deadline: 0,
     confidentiality: {
       Trusted: {

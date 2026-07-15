@@ -7,6 +7,7 @@ import {
   signAndSend,
   simpleCompute,
   DEFAULT_EMPTY_PAYLOAD,
+  toAtomicPaliAmount,
 } from "../dist/index.js";
 
 function assertCondition(condition, message) {
@@ -15,7 +16,7 @@ function assertCondition(condition, message) {
   }
 }
 
-export async function testSimpleComputeIntegration() {
+export async function testInvalidUrlCompute() {
   if (process.env.PALLIORA_WS) {
     configure({ pallioraWs: process.env.PALLIORA_WS, debug: true });
   } else {
@@ -32,7 +33,7 @@ export async function testSimpleComputeIntegration() {
     "No guardians available on-chain",
   );
 
-  const selected = guardianEntries.slice(0, 3);
+  const selected = guardianEntries.slice(0, 1).map((g) => g.address);
   assertCondition(selected.length > 0, "No guardians selected for compute");
 
   const api = await getApi();
@@ -54,10 +55,10 @@ export async function testSimpleComputeIntegration() {
     inputExtrinsicIndex: daResult.index,
     programUrl:
       "ujjwalpal/hello-world:test",
-    fees: BigInt("2"),
+    fee: { amount: "2", computeRate: "0.00001" },
     deadline: 0,
     trustIndex: 0,
-  });
+  }, signer);
 
   assertCondition(!!result.hash, "simpleCompute tx hash is missing");
   assertCondition(
@@ -95,39 +96,24 @@ export async function testInlineProgramComputeIntegration() {
     "No guardians available on-chain",
   );
 
-  const selected = guardianEntries.slice(0, 3);
+  const selected = guardianEntries.slice(0, 1).map((g) => g.address);
   assertCondition(selected.length > 0, "No guardians selected for compute");
-
-  const guardianAddresses = selected.map((g) => g.address);
 
   const api = await getApi();
   if (!api) throw new Error("Api not initialized");
 
-  // Submit DA input first and use its block/index as ChainTransaction input reference.
-  const inputPayload = JSON.stringify({ prompt: "integration-test-inline-program" });
-  const daTx = api.tx.dataAvailability.submitData(inputPayload);
-  const daResult = await signAndSend(daTx, signer, DEFAULT_EMPTY_PAYLOAD);
-
-  assertCondition(
-    daResult.blockNumber !== undefined && daResult.index !== undefined,
-    "Failed to submit DA input transaction",
-  );
-
   // Use Docker 'hello-world' image name as inline program bytes.
-  const inlineProgramData = Array.from(new TextEncoder().encode("ujjwalpal/hello-world:test"));
+  const inlineProgramData = Array.from(new TextEncoder().encode("ujjwalpal/short-waited-hello:test"));
   const inlineInputData = Array.from(new TextEncoder().encode("ujjwal"));
 
   const plaintextCipher = "Plaintext";
   const computeStep = {
     cipher: plaintextCipher,
-    computer_indices: guardianAddresses.map((_, i) => i),
-    fees: BigInt("2"),
+    computer_indices: selected.map((_, i) => i),
+    fees: toAtomicPaliAmount("0.2"),
+    compute_rate: toAtomicPaliAmount("0.00001"),
     deadline: 0,
-    confidentiality: {
-      Trusted: {
-        trust_index: 0,
-      },
-    },
+    confidentiality: { Trusted: 0 },
     fee_function: null,
     input: {
       Inline: {
@@ -135,22 +121,22 @@ export async function testInlineProgramComputeIntegration() {
       },
     },
     program: {
-      Url: {
-        url: inlineProgramData,
+      Inline: {
+        data: inlineProgramData,
       },
     },
   };
 
   const contract = {
     contract_type: "Active",
-    guardians: guardianAddresses,
+    guardians: selected,
     pre_check: null,
     compute: computeStep,
     post_check: null,
     result_cipher: plaintextCipher,
   };
 
-  const tx = api.tx.compute.agreement(contract);
+  const tx = api.tx.compute.agreement(contract, null);
   const result = await signAndSend(tx, signer, {
     compute: { da_type: 1, verification: 0, compute: 1 },
   });
@@ -162,21 +148,14 @@ export async function testInlineProgramComputeIntegration() {
   );
 
   console.log("inline program compute integration test passed");
-  console.log({
-    daInput: {
-      blockNumber: daResult.blockNumber,
-      extrinsicIndex: daResult.index,
-      hash: daResult.hash,
-    },
-    computeResult: result,
-  });
+  console.log({ computeResult: result });
 
   return result;
 }
 
 async function main() {
-  await testSimpleComputeIntegration();
-  // await testInlineProgramComputeIntegration();
+  // await testInvalidUrlCompute();
+  await testInlineProgramComputeIntegration();
 }
 
 main().catch((err) => {

@@ -28,7 +28,7 @@ async function main() {
   if (!guardianEntries.length) throw new Error("No guardians available on-chain");
   console.log("Guardians:", guardianEntries);
 
-  const selected = guardianEntries.slice(0, 3).map((g) => g.address);
+  const selected = guardianEntries.slice(0, 1).map((g) => g.address);
   const model = "gemma3:12b";
   const payload = {
     model,
@@ -50,7 +50,7 @@ async function main() {
   const result = await inferenceCompute({
     input: JSON.stringify(payload),
     guardians: selected,
-    fees: 0.2,
+    fee: { amount: 0.05, computeRate: 0.00002 },
     deadline: 0,
   }, signer);
 

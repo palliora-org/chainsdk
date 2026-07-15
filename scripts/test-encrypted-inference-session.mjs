@@ -37,6 +37,7 @@ import {
   createAgreement,
   createGuardianGroupAndWatch,
   scanForBlockEvent,
+  signAndSend,
   testCrypt,
   encrypt,
   gen_stretched_key,
@@ -194,7 +195,7 @@ async function main() {
   const computeStep = {
     cipher: inputCipher,
     computer_indices: selectedGuardians.map((_, i) => i),
-    fees: toAtomicPaliAmount("0.51"), // 0.21 PALI
+    fees: toAtomicPaliAmount("1.21"), // 0.21 PALI
     compute_rate: toAtomicPaliAmount("0.00001"),
     deadline: 0,
     confidentiality: { Trusted: 0 },
@@ -207,7 +208,7 @@ async function main() {
   };
 
   const contract = {
-    contract_type: "Active",
+    contract_type: "Subscription",
     guardians: selectedGuardians,
     pre_check: null,
     compute: computeStep,
@@ -305,6 +306,116 @@ async function main() {
     console.log(JSON.stringify(parsed, null, 2));
   } catch {
     console.log("\n[Decrypted text result]");
+  }
+
+  // --- 11. Invoke the subscription with a new encrypted payload ---------------
+  console.log("\n--- Invoke ---");
+  const invokePayload = {
+    model: "gemma3:12b",
+    messages: [
+      { role: "user", content: "what is 2 + 2?" },
+    ],
+    stream: false,
+  };
+
+  const invokePayloadBytes = new TextEncoder().encode(JSON.stringify(invokePayload));
+
+  const { encoded: invokeCyphtxt, ikm: invokeIkm } = testCrypt(
+    stripHex(TAU_PARAMS),
+    stripHex(AGG_KEY),
+  );
+  const invokeSymKey = gen_stretched_key(hexToUint8Array(stripHex(invokeIkm)));
+  const { ciphertext: invokeCiphertext, nonce: invokeNonce } = encrypt(
+    invokePayloadBytes,
+    invokeSymKey,
+  );
+
+  console.log("[Invoke encryption]");
+  console.log("  IKM (hex):", invokeIkm);
+  console.log("  Nonce (hex):", Buffer.from(invokeNonce).toString("hex"));
+  console.log("  Ciphertext length:", invokeCiphertext.length, "bytes");
+
+  const invokeCipher = buildEncryptedCipher(
+    invokeCyphtxt,
+    GROUP_PK,
+    TAU_PARAMS,
+    invokeNonce,
+  );
+
+  const contractIdBytes = Array.from(hexToUint8Array(stripHex(agreementId)));
+
+  const invokeTx = (
+    api.tx
+  )["compute"]["invoke"](
+    contractIdBytes,
+    selectedGuardians,
+    invokeCipher,
+    { Inline: { data: Array.from(invokeCiphertext) } },
+  );
+
+  const invokeSubmission = await signAndSend(invokeTx, account);
+  console.log("\n[Invoke submitted]");
+  console.log("  Block:", invokeSubmission.blockNumber);
+  console.log("  Hash:", invokeSubmission.hash);
+
+  // --- 12. Wait for the invocation result and decrypt -------------------------
+  console.log("\nWaiting for invoke compute result...");
+  const invokeMatch = await scanForBlockEvent(
+    api,
+    {
+      predicate: async (block, _event, phase) => {
+        if (!block || !phase.isApplyExtrinsic) return false;
+        const extrinsic = block.block.extrinsics[phase.asApplyExtrinsic.toNumber()];
+        if (
+          extrinsic?.method?.section?.toLowerCase() !== "compute" ||
+          extrinsic?.method?.method?.toLowerCase() !== "result"
+        ) return false;
+
+        const args = extrinsic.method.args;
+        const emittedId =
+          "0x" +
+          Array.from(args[0])
+            .map((byte) => ("0" + (byte & 0xff).toString(16)).slice(-2))
+            .join("");
+        return emittedId === agreementId;
+      },
+    },
+    invokeSubmission.blockNumber + 1,
+    0,
+  );
+
+  const invokeResultExtrinsic = await fetchAndDecodeExtrinsic(
+    invokeMatch.blockNumber,
+    invokeMatch.extrinsicIndex ?? 0,
+  );
+  const invokeArgs = invokeResultExtrinsic.decoded.method.args;
+  const invokeEmittedAgreementId = invokeArgs.requestId ?? "0x";
+
+  const invokeResultCiphertext = Buffer.from(
+    invokeArgs.contract.compute.input.Inline.data.slice(2),
+    "hex",
+  );
+  const invokeResultNonce = Buffer.from(
+    invokeArgs.contract.compute.cipher.AsymmetricHybrid.symmetricParams.ChaCha20Poly1305.nonce.slice(2),
+    "hex",
+  );
+
+  const invokeDecrypted = decrypt(invokeResultCiphertext, sharedKey, invokeResultNonce);
+  if (!invokeDecrypted) {
+    throw new Error("Failed to decrypt invoke compute result");
+  }
+
+  const invokeResultText = new TextDecoder().decode(invokeDecrypted);
+  console.log(
+    `\nReceived invoke result for agreement ${invokeEmittedAgreementId}: ${invokeResultText}`,
+  );
+
+  try {
+    const parsed = JSON.parse(invokeResultText);
+    console.log("\n[Decrypted invoke JSON result]");
+    console.log(JSON.stringify(parsed, null, 2));
+  } catch {
+    console.log("\n[Decrypted invoke text result]");
   }
 
   process.exit(0);
