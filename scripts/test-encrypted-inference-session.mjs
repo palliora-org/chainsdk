@@ -51,6 +51,35 @@ const nodePub = new Uint8Array([
 ]);
 
 // ---------------------------------------------------------------------------
+// Profiler
+// ---------------------------------------------------------------------------
+
+const _perf = { marks: [] };
+function mark(label) {
+  _perf.marks.push({ label, ts: Date.now() });
+  const prev = _perf.marks[_perf.marks.length - 2];
+  const elapsed = prev ? `+${Date.now() - prev.ts}ms` : "+0ms";
+  console.log(`[PERF] ${label} @ ${new Date().toISOString()}  (${elapsed} since last)`);
+}
+function printPerfSummary() {
+  if (_perf.marks.length < 2) return;
+  const start = _perf.marks[0].ts;
+  console.log("\n┌─────────────────────────────────────────────────────────────────┐");
+  console.log("│ Timestamp profile                                               │");
+  console.log("├────────────────────────────────┬──────────────┬────────────────┤");
+  console.log("│ Event                          │ Elapsed      │ Delta          │");
+  console.log("├────────────────────────────────┼──────────────┼────────────────┤");
+  for (let i = 0; i < _perf.marks.length; i++) {
+    const { label, ts } = _perf.marks[i];
+    const elapsed = `${ts - start}ms`.padStart(11);
+    const delta = i > 0 ? `${ts - _perf.marks[i - 1].ts}ms`.padStart(13) : "            —";
+    const l = label.padEnd(30).slice(0, 30);
+    console.log(`│ ${l} │ ${elapsed}  │ ${delta}  │`);
+  }
+  console.log("└────────────────────────────────┴──────────────┴────────────────┘");
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -108,6 +137,8 @@ function buildAsymmetricResultCipher(recipientEd25519PubKey, nonce) {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  mark("start");
+
   // --- 1. Resolve signer ---------------------------------------------------
   const keyring = await getKeyring();
   const encKeyring = await getEncKeyring();
@@ -121,12 +152,14 @@ async function main() {
     "| Encryption key:",
     encAccount.address,
   );
+  mark("keyring_ready");
 
   // --- 2. Create guardian group and retrieve group parameters --------------
   const selectedGuardians = (await getGuardianAddress()).slice(0, 3).map((g) => g.address);
   if (selectedGuardians.length < 3) throw new Error("Need at least 3 guardians available on-chain");
 
-  const groupInfo = await createGuardianGroupAndWatch(account, selectedGuardians, 8);
+  const groupInfo = await createGuardianGroupAndWatch(account, selectedGuardians, 40);
+  mark("guardian_group_created");
   const { aggKey: AGG_KEY, groupPk: GROUP_PK, tauParams: TAU_PARAMS, guardians } = groupInfo;
 
   // --- 4. Build the inference payload to encrypt ----------------------------
@@ -163,6 +196,7 @@ async function main() {
     payloadBytes,
     inputSymKey,
   );
+  mark("input_payload_encrypted");
 
   console.log("\n[Input encryption]");
   console.log("  IKM (hex):", inputIkm);
@@ -218,7 +252,9 @@ async function main() {
 
   // --- 8. Submit and report -------------------------------------------------
   console.log("\nSubmitting encrypted inference agreement...");
+  mark("agreement_submit_start");
   const result = await createAgreement(contract, account);
+  mark("agreement_submitted");
 
   console.log("\n[Transaction submitted]");
   console.log("  Block:", result.blockNumber);
@@ -242,6 +278,7 @@ async function main() {
   let nextBlock = result.blockNumber + 1;
 
   console.log("\nWaiting for compute result...");
+  mark("waiting_for_compute_result");
   const match = await scanForBlockEvent(
     api,
     {
@@ -273,6 +310,7 @@ async function main() {
     0,
   );
 
+  mark("compute_result_block_found");
   const block = await match.block();
   const resultExtrinsic = await fetchAndDecodeExtrinsic(
     match.blockNumber,
@@ -294,6 +332,7 @@ async function main() {
   if (!decrypted) {
     throw new Error("Failed to decrypt compute result");
   }
+  mark("compute_result_decrypted");
 
   const resultText = new TextDecoder().decode(decrypted);
   console.log(
@@ -329,6 +368,7 @@ async function main() {
     invokePayloadBytes,
     invokeSymKey,
   );
+  mark("invoke_payload_encrypted");
 
   console.log("[Invoke encryption]");
   console.log("  IKM (hex):", invokeIkm);
@@ -353,13 +393,16 @@ async function main() {
     { Inline: { data: Array.from(invokeCiphertext) } },
   );
 
+  mark("invoke_submit_start");
   const invokeSubmission = await signAndSend(invokeTx, account);
+  mark("invoke_submitted");
   console.log("\n[Invoke submitted]");
   console.log("  Block:", invokeSubmission.blockNumber);
   console.log("  Hash:", invokeSubmission.hash);
 
   // --- 12. Wait for the invocation result and decrypt -------------------------
   console.log("\nWaiting for invoke compute result...");
+  mark("waiting_for_invoke_result");
   const invokeMatch = await scanForBlockEvent(
     api,
     {
@@ -384,6 +427,7 @@ async function main() {
     0,
   );
 
+  mark("invoke_result_block_found");
   const invokeResultExtrinsic = await fetchAndDecodeExtrinsic(
     invokeMatch.blockNumber,
     invokeMatch.extrinsicIndex ?? 0,
@@ -404,6 +448,7 @@ async function main() {
   if (!invokeDecrypted) {
     throw new Error("Failed to decrypt invoke compute result");
   }
+  mark("invoke_result_decrypted");
 
   const invokeResultText = new TextDecoder().decode(invokeDecrypted);
   console.log(
@@ -418,6 +463,8 @@ async function main() {
     console.log("\n[Decrypted invoke text result]");
   }
 
+  mark("done");
+  printPerfSummary();
   process.exit(0);
 }
 
