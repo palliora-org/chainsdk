@@ -88,6 +88,13 @@ export const API_TYPES = {
 		active: 'u32',
 		maximum: 'u32'
 	},
+	CurrencyId: {
+		_enum: {
+			Native: 'Null',
+			USDC: 'Null',
+			ForeignAsset: 'u32',
+		},
+	},
 	GuardianNwParams: {
 		kzg: 'Vec<u8>',
 		aggKey: 'Vec<u8>'
@@ -289,7 +296,8 @@ export const API_TYPES = {
 		preCheck: 'Option<ComputeInfo>',
 		compute: 'ComputeInfo',
 		postCheck: 'Option<ComputeInfo>',
-		resultCipher: 'CipherSuite'
+		resultCipher: 'CipherSuite',
+		currencyId: 'CurrencyId'
 	},
 	AgreementInfo: {
 		status: 'AgreementStatus',
@@ -425,6 +433,18 @@ export const API_EXTENSIONS = {
 	CheckCompute: {
 		extrinsic: {
 				compute: "ComputePayload",
+		},
+		payload: {},
+	},
+	// Replaces pallet_transaction_payment::ChargeTransactionPayment. Since this
+	// identifier isn't one @polkadot/api knows natively, this definition entirely
+	// replaces (not merges with) the built-in one, so `tip` must be re-declared
+	// here alongside the new `currencyId` field or it silently drops from the
+	// encoded extra bytes, shifting every extrinsic out of alignment.
+	ChargeCurrencyTransactionPayment: {
+		extrinsic: {
+			tip: "Compact<Balance>",
+			currencyId: "Option<CurrencyId>",
 		},
 		payload: {},
 	},

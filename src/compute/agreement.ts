@@ -3,7 +3,7 @@ import { assert, debugLog, toAtomicPaliAmount } from "../utils";
 import type { KeyringPair } from "@polkadot/keyring/types";
 import type { SubmittableExtrinsic } from "@polkadot/api/types";
 import type { GuardianAddress } from "../da/types";
-import type { Fee } from "../chain/types";
+import type { CurrencyId, Fee } from "../chain/types";
 
 /**
  * Converts a {@link Fee} into the on-chain `fees` / `computeRate` pair.
@@ -25,6 +25,8 @@ export interface ComputeContract {
   compute: Record<string, unknown>;
   postCheck?: unknown;
   resultCipher: unknown;
+  /** Currency the deposit is reserved in and settlement is paid out in. Defaults to "Native". */
+  currencyId?: CurrencyId;
 }
 
 export async function createAgreement(
@@ -40,12 +42,16 @@ export async function createAgreement(
   const api = await getApi();
   if (!api) throw new Error("Api not initialized");
 
+  // currencyId defaults to "Native", reproducing pre-upgrade behavior for callers
+  // that don't opt into paying the contract deposit/settlement in another currency.
+  const onChainContract = { currencyId: "Native" as const, ...contract };
+
   const tx = (
     api.tx as Record<
       string,
       Record<string, (...args: unknown[]) => SubmittableExtrinsic<"promise">>
     >
-  )["compute"]["agreement"](contract, oracle_quore_id ?? null);
+  )["compute"]["agreement"](onChainContract, oracle_quore_id ?? null);
   const opts = {
     compute: {
       daType: 1,

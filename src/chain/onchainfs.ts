@@ -178,7 +178,7 @@ class MCryptFsWriter {
 		);
 		console.log("account: ", this._account);
 		return new Promise<{ blockNumber: number; index: number }>((resolve) => {
-			request.signAndSend(this._account, { app_id: 1 }, (result: { isInBlock: boolean; isFinalized: boolean; isError: boolean; blockNumber?: { toNumber(): number }; txIndex?: number }) => {
+			request.signAndSend(this._account, { app_id: 1, currencyId: null }, (result: { isInBlock: boolean; isFinalized: boolean; isError: boolean; blockNumber?: { toNumber(): number }; txIndex?: number }) => {
 				if (result.isInBlock || result.isFinalized || result.isError) {
 					resolve({
 						blockNumber: result.blockNumber?.toNumber() ?? 0,

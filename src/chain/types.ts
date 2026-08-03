@@ -1,5 +1,8 @@
 import type { PaliAmountInput } from "../utils/token";
 
+/** Identifies the currency used for fee payment / contract settlement. Mirrors runtime `primitives::CurrencyId`. */
+export type CurrencyId = "Native" | "USDC" | { ForeignAsset: number };
+
 /** Fee terms for a compute step: an absolute amount plus an optional dynamic compute rate. */
 export interface Fee {
   /** Absolute fee offered for the compute step, in PALI. Defaults to 0. */

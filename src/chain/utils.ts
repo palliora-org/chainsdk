@@ -19,9 +19,12 @@ interface SubmittableResultExtended extends ISubmittableResult {
 }
 
 export const signAndSend = async (request: SubmittableExtrinsic<'promise'>, account: KeyringPair, opts: Record<string, unknown> = DEFAULT_COMPUTE_PAYLOAD) => {
+  // currencyId feeds ChargeCurrencyTransactionPayment's extra field; null (None) pays
+  // fees in the native currency, matching pre-upgrade behavior. Callers may override.
+  const signOpts = { currencyId: null, ...opts };
   const tx_result: SubmittableResultExtended = await new Promise((res, err) => {
     // opts contains custom chain-specific fields (daType, compute, etc.) that extend SignerOptions
-    request.signAndSend(account, opts as Parameters<typeof request.signAndSend>[1], (result: SubmittableResultExtended) => {
+    request.signAndSend(account, signOpts as Parameters<typeof request.signAndSend>[1], (result: SubmittableResultExtended) => {
       // console.trace(result.toHuman());
       if (result.isFinalized) {
         res(result);
