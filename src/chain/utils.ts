@@ -11,7 +11,7 @@ import type { ISubmittableResult } from "@polkadot/types/types";
 import type { EventRecord } from "@polkadot/types/interfaces";
 import type { ApiPromise } from "@polkadot/api";
 import type { Header, SignedBlock } from "@polkadot/types/interfaces";
-import { SubmissionReceipt } from "./types";
+import { AgreementStatus, ContractInfo, ContractType, SubmissionReceipt } from "./types";
 
 /** ISubmittableResult extended with the concrete blockNumber present after finalization */
 interface SubmittableResultExtended extends ISubmittableResult {
@@ -59,6 +59,41 @@ export const signAndSend = async (request: SubmittableExtrinsic<'promise'>, acco
     hash: tx_result.txHash.toHex(),
     tx_result: tx_result as ISubmittableResult,
   };
+};
+
+/**
+ * Retries {@link signAndSend} with exponential backoff, for RPC endpoints that
+ * intermittently drop connections or time out mid-submission.
+ *
+ * @param request   Unsigned extrinsic to submit
+ * @param account   Signing account
+ * @param opts      Extra signer options, forwarded to `signAndSend` (see its defaults)
+ * @param retries   Number of retry attempts after the initial try (default 3)
+ * @param backoffMs Base delay before the first retry; doubles each subsequent attempt (default 1000)
+ */
+export const retrySignAndSend = async (
+  request: SubmittableExtrinsic<'promise'>,
+  account: KeyringPair,
+  opts?: Record<string, unknown>,
+  retries = 3,
+  backoffMs = 1000,
+) => {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await signAndSend(request, account, opts);
+    } catch (err) {
+      lastError = err;
+      if (attempt === retries) break;
+
+      const delay = backoffMs * 2 ** attempt;
+      debugLog(`retrySignAndSend: attempt ${attempt + 1} failed, retrying in ${delay}ms`, err);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
 };
 
 export const getFileMetadataCall = async (
@@ -133,6 +168,46 @@ export const getGuardianNwParams = async () => {
 };
 
 /**
+ * Reads back the on-chain record for an agreement/contract created via
+ * `createAgreement`, from `compute.contracts`.
+ *
+ * @param contractId - Hex-encoded agreement ID (as returned by `createAgreement`).
+ * @returns The decoded {@link ContractInfo}, or `null` if no contract exists for that ID.
+ */
+export async function getContractInfo(contractId: string): Promise<ContractInfo | null> {
+  const api = await getApi();
+  if (!api) throw new Error("API not initialized");
+
+  assert(
+    isFunction(api.query["compute"]?.["contracts"]),
+    `api.query.compute.contracts does not exist`,
+  );
+
+  const raw = await api.query["compute"]["contracts"](contractId);
+  const info = raw.toPrimitive() as {
+    status: AgreementStatus;
+    owner: string;
+    originBlock: number;
+    invocationBlock: number;
+    index: number;
+    usagePrice: number | string;
+    contractType: ContractType;
+  } | null;
+
+  if (!info) return null;
+
+  return {
+    status: info.status,
+    owner: info.owner,
+    originBlock: info.originBlock,
+    invocationBlock: info.invocationBlock,
+    index: info.index,
+    usagePrice: BigInt(info.usagePrice),
+    contractType: info.contractType,
+  };
+}
+
+/**
  * Fetches the block at `blockHeight`, extracts the extrinsic at
  * `extrinsicIndex`, and returns both the raw codec object and its human-readable
  * decoded form.
@@ -163,6 +238,22 @@ export async function fetchAndDecodeExtrinsic(
   const decoded = raw.toHuman() as Record<string, unknown>;
 
   return { raw, decoded };
+}
+
+/**
+ * Finds the first event record matching `section`/`method` (case-insensitive)
+ * among a transaction's emitted events, e.g. `tx_result.events` from {@link signAndSend}.
+ */
+export function findEvent(
+  events: EventRecord[],
+  section: string,
+  method: string,
+): EventRecord | undefined {
+  return events.find(
+    (record) =>
+      record.event.section.toLowerCase() === section.toLowerCase() &&
+      record.event.method.toLowerCase() === method.toLowerCase(),
+  );
 }
 
 export type BlockScanFilter =
@@ -270,6 +361,35 @@ export const scanForBlockEvent = (
     );
   });
 };
+
+/**
+ * Resolves as soon as the next block header is produced. Useful as a plain
+ * polling tick, e.g. between rounds of a manual wait loop.
+ */
+export async function waitForNextBlock(): Promise<{ blockNumber: number; blockHash: string }> {
+  const api = await getApi();
+  if (!api) throw new Error("API not initialized");
+
+  return new Promise((resolve, reject) => {
+    let unsubFn: (() => void) | undefined;
+    let settled = false;
+
+    api.rpc.chain.subscribeNewHeads((header: Header) => {
+      if (settled) return;
+      settled = true;
+      unsubFn?.();
+      resolve({ blockNumber: header.number.toNumber(), blockHash: header.hash.toHex() });
+    }).then((fn) => {
+      if (settled) fn();
+      else unsubFn = fn;
+    }).catch((err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    });
+  });
+}
 
 /**
  * Subscribes to new block headers and scans each block's extrinsics until a

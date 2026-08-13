@@ -1,4 +1,4 @@
-import { getApi, getGuardianAddress, getKeyring, signAndSend } from "../chain";
+import { findEvent, getApi, getGuardianAddress, getKeyring, signAndSend } from "../chain";
 import { assert, debugLog, toAtomicPaliAmount } from "../utils";
 import type { KeyringPair } from "@polkadot/keyring/types";
 import type { SubmittableExtrinsic } from "@polkadot/api/types";
@@ -67,16 +67,7 @@ export async function createAgreement(
   );
 
   if (!tx_result.isError) {
-    const agreementCreatedEvent = tx_result.events.find(
-      (event: {
-        event: { section: string; method: string; data: unknown[] };
-      }) => {
-        return (
-          event.event.section === "compute" &&
-          event.event.method === "AgreementCreated"
-        );
-      },
-    );
+    const agreementCreatedEvent = findEvent(tx_result.events, "compute", "AgreementCreated");
 
     if (agreementCreatedEvent) {
       debugLog("Agreement data:", agreementCreatedEvent.event.data.toString());
@@ -94,6 +85,45 @@ export async function createAgreement(
   }
 
   return { blockNumber, index: index ?? 0, hash };
+}
+
+export interface InvokeAgreementInput {
+  /** Guardian account IDs handling the invocation; matches the agreement's guardian set. */
+  guardians: GuardianAddress[];
+  /** Cipher suite describing how `data` is encrypted. Use "Plaintext" for unencrypted payloads. */
+  cipher: unknown;
+  /** Invocation payload bytes (already encrypted if `cipher` is not "Plaintext"). */
+  data: Uint8Array | number[];
+}
+
+/**
+ * Invokes an existing `Subscription`-type agreement with a new payload, via
+ * `compute.invoke`.
+ *
+ * @param agreementId - Hex-encoded agreement ID (as returned by `createAgreement`).
+ */
+export async function invokeAgreement(
+  agreementId: string,
+  input: InvokeAgreementInput,
+  account: KeyringPair,
+  opts?: Record<string, unknown>,
+) {
+  const api = await getApi();
+  if (!api) throw new Error("Api not initialized");
+
+  const tx = (
+    api.tx as Record<
+      string,
+      Record<string, (...args: unknown[]) => SubmittableExtrinsic<"promise">>
+    >
+  )["compute"]["invoke"](
+    agreementId,
+    input.guardians,
+    input.cipher,
+    { Inline: { data: Array.from(input.data) } },
+  );
+
+  return signAndSend(tx, account, opts);
 }
 
 export async function createSimpleAgreement() {

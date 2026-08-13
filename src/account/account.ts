@@ -63,6 +63,22 @@ export async function createAccount(
   }
 }
 
+/**
+ * Derives a Substrate account from a Magic Link (or other Ethereum-compatible)
+ * signature over the fixed message `createAccount` expects for signature-derived
+ * accounts, wiring passwordless/email-based onboarding into the existing
+ * `AccountSourceType.DERIVED` flow.
+ *
+ * @param signature - Hex-encoded signature (0x-prefixed) produced by the Magic Link signer.
+ */
+export async function createAccountFromMagicLink(
+  signature: string,
+  name: string = "default",
+  cryptoType: CryptoType = CryptoType.SR25519,
+): Promise<KeyringPair> {
+  return createAccount(signature, AccountSourceType.DERIVED, name, cryptoType);
+}
+
 export function pairFromPrivateKeyHex(privateKeyHex: string, cryptoType: CryptoType) {
   const privateKey = hexToU8a(privateKeyHex);
 

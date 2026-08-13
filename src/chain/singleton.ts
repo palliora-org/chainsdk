@@ -99,6 +99,27 @@ export async function getApi(cb?: () => void) {
 }
 
 /**
+ * disconnectApi()
+ *
+ * Tears down the singleton {@link ApiPromise} instance, if one exists.
+ *
+ * @remarks
+ * Safe to call when no API has been created yet (no-op). After this resolves,
+ * the next call to {@link getApi} creates a fresh instance.
+ */
+export async function disconnectApi() {
+  if (!api) return;
+
+  const current = api;
+  api = null;
+  apiUrl = null;
+  apiListenersAttached = false;
+  apiTeardownInProgress = false;
+
+  await current.disconnect().catch(() => {});
+}
+
+/**
  * getKeyring()
  *
  * Returns the singleton {@link Keyring} instance, creating it if necessary.
