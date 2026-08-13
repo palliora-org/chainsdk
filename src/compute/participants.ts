@@ -1,5 +1,5 @@
 import bs58 from 'bs58';
-import { getApi } from '../chain';
+import { disconnectApi, getApi } from '../chain';
 
 export interface GuardianParticipants {
 	nwState: {
@@ -78,7 +78,7 @@ export async function getGuardianParticipants(): Promise<GuardianParticipants> {
 			upcomingGuardians,
 		};
 	} finally {
-		api.disconnect();
+		await disconnectApi();
 	}
 }
 

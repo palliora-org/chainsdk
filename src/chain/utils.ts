@@ -501,31 +501,23 @@ export async function getAgreementCreatedRequestId(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const allEvents = (await apiAt.query.system.events()) as unknown as EventRecord[];
 
-  for (const record of allEvents) {
-    const { phase, event } = record;
+  // Only consider events produced by the extrinsic at our index.
+  const extrinsicEvents = allEvents.filter(
+    (record) => record.phase.isApplyExtrinsic && record.phase.asApplyExtrinsic.toNumber() === extrinsicIndex,
+  );
 
-    // Only consider events produced by the extrinsic at our index.
-    if (!phase.isApplyExtrinsic || phase.asApplyExtrinsic.toNumber() !== extrinsicIndex) {
-      continue;
-    }
+  const match = findEvent(extrinsicEvents, "compute", "AgreementCreated");
+  if (!match) return null;
 
-    if (
-      String(event.section ?? '').toLowerCase() !== 'compute' ||
-      String(event.method ?? '').toLowerCase() !== 'agreementcreated'
-    ) {
-      continue;
-    }
-
-    // Decode event data and extract the request ID.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dataHuman = event.data.toHuman() as Record<string, unknown> | unknown[];
-    if (Array.isArray(dataHuman)) {
-      const first = dataHuman[0];
-      if (first != null) return String(first);
-    } else if (dataHuman !== null && typeof dataHuman === 'object') {
-      const id = dataHuman['requestId'] ?? dataHuman['request_id'] ?? dataHuman['id'];
-      if (id != null) return String(id);
-    }
+  // Decode event data and extract the request ID.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dataHuman = match.event.data.toHuman() as Record<string, unknown> | unknown[];
+  if (Array.isArray(dataHuman)) {
+    const first = dataHuman[0];
+    if (first != null) return String(first);
+  } else if (dataHuman !== null && typeof dataHuman === 'object') {
+    const id = dataHuman['requestId'] ?? dataHuman['request_id'] ?? dataHuman['id'];
+    if (id != null) return String(id);
   }
 
   return null;
