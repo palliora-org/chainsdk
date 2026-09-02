@@ -3,3 +3,6 @@ dist
 .env*
 .DS_Store
 **/.DS_Store
+
+# Sibling checkout of the valorae app (its own git repo)
+valorae/

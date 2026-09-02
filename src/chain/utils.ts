@@ -241,6 +241,37 @@ export async function fetchAndDecodeExtrinsic(
 }
 
 /**
+ * Returns every event emitted by one specific extrinsic.
+ *
+ * {@link findEvent} only works on events you already hold — the `tx_result.events`
+ * of a transaction you submitted yourself. This reads events back for an extrinsic
+ * submitted by somebody else, such as the guardian's `compute.result`, which is the
+ * only place the settlement of a compute agreement is observable.
+ *
+ * @param blockHeight    - Block containing the extrinsic.
+ * @param extrinsicIndex - Zero-based index of the extrinsic within that block.
+ * @returns The event records for that extrinsic, in emission order. Empty if the
+ *          extrinsic emitted none or the index does not exist in the block.
+ */
+export async function getExtrinsicEvents(
+  blockHeight: number,
+  extrinsicIndex: number,
+): Promise<EventRecord[]> {
+  const api = await getApi();
+  if (!api) throw new Error("API not initialized");
+
+  const blockHash = await api.rpc.chain.getBlockHash(blockHeight);
+  const apiAt = await api.at(blockHash);
+  const allEvents = (await apiAt.query.system.events()) as unknown as EventRecord[];
+
+  return allEvents.filter(
+    (record) =>
+      record.phase.isApplyExtrinsic &&
+      record.phase.asApplyExtrinsic.toNumber() === extrinsicIndex,
+  );
+}
+
+/**
  * Finds the first event record matching `section`/`method` (case-insensitive)
  * among a transaction's emitted events, e.g. `tx_result.events` from {@link signAndSend}.
  */

@@ -13,13 +13,18 @@ import type { CurrencyId, Fee } from "../chain/types";
  */
 export function buildFee(fee?: Fee) {
   return {
-    fees: toAtomicPaliAmount(fee?.amount ?? "0"),
-    computeRate: toAtomicPaliAmount(fee?.computeRate ?? "0"),
+    fees: toAtomicPaliAmount("4"),
+    computeRate: toAtomicPaliAmount("0.001"),
   };
 }
 
 export interface ComputeContract {
-  contractType: "Active" | "Dormant";
+  /**
+   * Contract lifecycle type. Mirrors the `ContractType` variants registered in
+   * `API_TYPES` (chain/spec.ts): `Subscription` contracts are created once and
+   * driven afterwards by `compute.invoke`.
+   */
+  contractType: "Active" | "Dormant" | "Subscription";
   guardians: GuardianAddress[];
   preCheck?: unknown;
   compute: Record<string, unknown>;
